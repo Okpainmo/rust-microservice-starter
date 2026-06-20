@@ -221,6 +221,7 @@ mod tests {
                 jwt_one_time_password_lifetime_in_minutes: 5,
             }),
             rate_limit: None,
+            mesh: None,
         }
     }
 

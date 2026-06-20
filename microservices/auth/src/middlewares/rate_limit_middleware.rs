@@ -256,6 +256,7 @@ mod tests {
                 requests_per_window,
                 window_secs,
             }),
+            mesh: None,
         }
     }
 

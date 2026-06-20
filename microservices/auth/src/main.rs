@@ -9,11 +9,15 @@
 
 use auth::db::connect_postgres::connect_pg;
 use auth::middlewares::rate_limit_middleware::new_rate_limit_store;
-use auth::utils::load_config::load_config;
+use auth::utils::load_config::{AppConfig, load_config};
 use auth::utils::load_env::load_env;
+use auth::utils::registry_client::{MeshRegistryClient, MeshRegistryClientConfig};
 use auth::{AppState, create_app};
+use std::env;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
+use tokio::task::JoinHandle;
 use tracing::{error, info};
 use tracing_subscriber::fmt::time::SystemTime;
 
@@ -145,11 +149,25 @@ async fn main() {
         }
     };
 
+    let bound_port = listener
+        .local_addr()
+        .map(|addr| addr.port())
+        .unwrap_or(port);
+    let mesh_registration = register_with_mesh_until_ready(&state.config, host, bound_port).await;
+
     let server_result = axum::serve(
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
     )
+    .with_graceful_shutdown(shutdown_signal())
     .await;
+
+    if let Some((registry, heartbeat)) = mesh_registration {
+        heartbeat.abort();
+        if let Err(e) = registry.unregister().await {
+            error!("MESH UNREGISTRATION ERROR: {}!", e);
+        }
+    }
 
     match server_result {
         Ok(_) => {
@@ -159,4 +177,63 @@ async fn main() {
             error!("SERVER SHUTDOWN ERROR: {}!", e);
         }
     }
+}
+
+async fn register_with_mesh_until_ready(
+    config: &AppConfig,
+    server_host: &str,
+    service_port: u16,
+) -> Option<(MeshRegistryClient, JoinHandle<()>)> {
+    let mesh_config = config.mesh.as_ref().filter(|mesh| mesh.enabled)?;
+    let advertised_host = mesh_config
+        .advertise_host
+        .as_deref()
+        .map(str::trim)
+        .filter(|host| !host.is_empty())
+        .map(ToOwned::to_owned)
+        .unwrap_or_else(|| server_host.to_string());
+
+    let registry = MeshRegistryClient::new(MeshRegistryClientConfig {
+        mesh_url: mesh_config.url.clone(),
+        mesh_token: mesh_config.token.clone(),
+        advertised_host,
+        service_name: mesh_config.service_name.clone(),
+        service_version: mesh_config.service_version.clone(),
+        service_port,
+        container_id: env::var("HOSTNAME").ok(),
+        external_host: mesh_config.external_host.clone(),
+        external_port: mesh_config.external_port,
+        external_scheme: mesh_config.external_scheme.clone(),
+    });
+
+    loop {
+        match registry.register().await {
+            Ok(endpoint) => {
+                info!(
+                    service_name = %mesh_config.service_name,
+                    service_version = %mesh_config.service_version,
+                    url = %endpoint.url,
+                    internal_ip = %endpoint.internal_ip,
+                    internal_port = endpoint.internal_port,
+                    "Service registered with mesh"
+                );
+
+                let heartbeat = registry.start_heartbeat(mesh_config.heartbeat_interval_secs);
+                break Some((registry, heartbeat));
+            }
+            Err(e) => {
+                error!(
+                    service_name = %mesh_config.service_name,
+                    service_version = %mesh_config.service_version,
+                    error = %format!("{e:#}"),
+                    "Mesh registration failed; retrying"
+                );
+                tokio::time::sleep(Duration::from_secs(1)).await;
+            }
+        }
+    }
+}
+
+async fn shutdown_signal() {
+    let _ = tokio::signal::ctrl_c().await;
 }

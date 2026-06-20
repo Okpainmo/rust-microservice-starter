@@ -79,6 +79,21 @@ pub struct RateLimitSection {
     pub window_secs: u64,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct MeshSection {
+    #[serde(default)]
+    pub enabled: bool,
+    pub url: String,
+    pub token: Option<String>,
+    pub service_name: String,
+    pub service_version: String,
+    pub advertise_host: Option<String>,
+    pub heartbeat_interval_secs: u64,
+    pub external_host: Option<String>,
+    pub external_port: Option<u16>,
+    pub external_scheme: String,
+}
+
 /// Root configuration structure containing all application settings.
 #[derive(Debug, Deserialize)]
 pub struct AppConfig {
@@ -91,6 +106,7 @@ pub struct AppConfig {
     pub database: Option<DatabaseSection>,
     pub auth: Option<AuthSection>,
     pub rate_limit: Option<RateLimitSection>,
+    pub mesh: Option<MeshSection>,
 }
 
 /// Loads the application configuration.
@@ -164,6 +180,10 @@ pub enum ConfigError {
     MissingDatabasePassword,
     MissingAuthSection,
     MissingJwtSecret,
+    MissingMeshUrl,
+    MissingMeshServiceName,
+    MissingMeshServiceVersion,
+    InvalidMeshHeartbeatInterval,
 }
 
 impl fmt::Display for ConfigError {
@@ -178,6 +198,14 @@ impl fmt::Display for ConfigError {
             ConfigError::MissingDatabasePassword => write!(f, "database.password cannot be empty"),
             ConfigError::MissingAuthSection => write!(f, "auth section is missing"),
             ConfigError::MissingJwtSecret => write!(f, "auth.jwt_secret cannot be empty"),
+            ConfigError::MissingMeshUrl => write!(f, "mesh.url cannot be empty"),
+            ConfigError::MissingMeshServiceName => write!(f, "mesh.service_name cannot be empty"),
+            ConfigError::MissingMeshServiceVersion => {
+                write!(f, "mesh.service_version cannot be empty")
+            }
+            ConfigError::InvalidMeshHeartbeatInterval => {
+                write!(f, "mesh.heartbeat_interval_secs cannot be 0")
+            }
         }
     }
 }
@@ -229,6 +257,21 @@ impl AppConfig {
         let auth = self.auth.as_ref().ok_or(ConfigError::MissingAuthSection)?;
         if auth.jwt_secret.trim().is_empty() {
             return Err(ConfigError::MissingJwtSecret);
+        }
+
+        if let Some(mesh) = self.mesh.as_ref().filter(|mesh| mesh.enabled) {
+            if mesh.url.trim().is_empty() {
+                return Err(ConfigError::MissingMeshUrl);
+            }
+            if mesh.service_name.trim().is_empty() {
+                return Err(ConfigError::MissingMeshServiceName);
+            }
+            if mesh.service_version.trim().is_empty() {
+                return Err(ConfigError::MissingMeshServiceVersion);
+            }
+            if mesh.heartbeat_interval_secs == 0 {
+                return Err(ConfigError::InvalidMeshHeartbeatInterval);
+            }
         }
 
         Ok(())
@@ -288,6 +331,7 @@ mod tests {
             }),
             auth: Some(valid_auth_section()),
             rate_limit: None,
+            mesh: None,
         };
 
         assert!(config.validate().is_ok());
@@ -326,6 +370,7 @@ mod tests {
             }),
             auth: Some(valid_auth_section()),
             rate_limit: None,
+            mesh: None,
         };
         config.app.name = "".to_string();
 
@@ -367,6 +412,7 @@ mod tests {
             }),
             auth: Some(valid_auth_section()),
             rate_limit: None,
+            mesh: None,
         };
 
         let result = config.validate();
@@ -407,6 +453,7 @@ mod tests {
             }),
             auth: Some(valid_auth_section()),
             rate_limit: None,
+            mesh: None,
         };
 
         let result = config.validate();
@@ -437,10 +484,59 @@ mod tests {
             database: None,
             auth: None,
             rate_limit: None,
+            mesh: None,
         };
 
         let result = config.validate();
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().to_string(), "server section is missing");
+    }
+
+    #[test]
+    fn test_validate_rejects_enabled_mesh_with_missing_url() {
+        let config = AppConfig {
+            app: valid_app_section(),
+            client_integrations: ClientIntegrationsSection {
+                allow_access_middleware: false,
+                allow_sessions_middleware: false,
+                allow_logging_middleware: false,
+                allow_request_timeout_middleware: false,
+                allow_rate_limit_middleware: false,
+                allow_admin_routes_protector_middleware: false,
+            },
+            server: Some(ServerSection {
+                host: "127.0.0.1".to_string(),
+                port: 8080,
+                request_timeout_secs: 60,
+            }),
+            database: Some(DatabaseSection {
+                engine: "postgres".to_string(),
+                host: "localhost".to_string(),
+                port: 5432,
+                user: Some("test".to_string()),
+                password: Some("pass".to_string()),
+                name: "db".to_string(),
+                max_connections: 5,
+                connect_timeout_secs: 3,
+            }),
+            auth: Some(valid_auth_section()),
+            rate_limit: None,
+            mesh: Some(MeshSection {
+                enabled: true,
+                url: "".to_string(),
+                token: None,
+                service_name: "auth-service".to_string(),
+                service_version: "1.0.0".to_string(),
+                advertise_host: None,
+                heartbeat_interval_secs: 5,
+                external_host: None,
+                external_port: None,
+                external_scheme: "http".to_string(),
+            }),
+        };
+
+        let result = config.validate();
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "mesh.url cannot be empty");
     }
 }

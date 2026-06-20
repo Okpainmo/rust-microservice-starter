@@ -17,6 +17,17 @@ enabled = true
 requests_per_window = 60
 window_secs = 60
 
+[mesh]
+enabled = false
+url = "http://127.0.0.1:3080"
+token = ""
+service_name = "auth-service"
+service_version = "1.0.0"
+advertise_host = ""
+heartbeat_interval_secs = 5
+external_host = ""
+external_scheme = "http"
+
 # [observability]
 # enable_tracing = true
 # enable_metrics = true
