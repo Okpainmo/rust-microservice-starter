@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+
+info() {
+  printf '%s\n' "$1"
+}
+
+info "🔎 Pre-commit: validating root shell hooks..."
+sh -n .husky/pre-commit .husky/pre-push .husky/commit-msg
+
+info "🦀 Pre-commit: checking all Rust microservices..."
+scripts/check-rust-services.sh
+
+info "📝 Pre-commit: checking repository formatting..."
+bunx prettier --check "**/*.{md,yml,yaml,json}"
+
+info "✅ Pre-commit: all checks passed."

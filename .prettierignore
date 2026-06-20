@@ -1,0 +1,11 @@
+.git
+node_modules
+target
+coverage
+lcov.info
+
+microservices/**/target
+microservices/**/node_modules
+microservices/**/coverage
+microservices/**/lcov.info
+microservices/**
