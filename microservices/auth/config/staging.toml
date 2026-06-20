@@ -1,0 +1,22 @@
+[app]
+environment = "staging"
+
+[database]
+engine = "postgres"
+host = "localhost"
+port = 5433
+user = "<db-user>" # will be overridden(with real values) from the expected environment variables file
+password = "<db-password>" # will be overridden(with real values) from the expected environment variables file
+name = "<db-name>" # will be overridden(with real values) from the expected environment variables file
+max_connections = 20
+connect_timeout_secs = 5
+
+[auth]
+jwt_secret = "default_secret"
+jwt_access_expiration_time_in_hours = 1
+jwt_refresh_expiration_time_in_hours = 24
+jwt_one_time_password_lifetime_in_minutes = 5
+
+# [observability]
+# enable_tracing = true
+# enable_metrics = true

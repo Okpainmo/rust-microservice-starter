@@ -1,0 +1,19 @@
+/target
+
+# .env
+.env.development
+.env.production
+.env.staging
+.env
+
+# extras
+.idea
+.vscode
+bash.exe.stackdump
+NOTES.md
+
+# node modules
+node_modules
+
+# internal
+internal

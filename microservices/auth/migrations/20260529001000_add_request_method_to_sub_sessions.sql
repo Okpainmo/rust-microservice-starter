@@ -1,0 +1,2 @@
+ALTER TABLE sub_sessions
+    ADD COLUMN IF NOT EXISTS request_method VARCHAR(16) NOT NULL DEFAULT '';

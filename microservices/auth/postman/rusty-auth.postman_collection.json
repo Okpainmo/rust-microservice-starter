@@ -1,0 +1,1041 @@
+{
+  "info": {
+    "_postman_id": "8f46234a-8d8d-4d51-8f35-0cfc6329df75",
+    "name": "Rusty Auth API",
+    "description": "Postman collection for the current Rusty Auth API build. Run Register or Login first, then protected requests will use the captured auth variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "function saveAuthFromResponse() {",
+          "  let body = {};",
+          "  try { body = pm.response.json(); } catch (error) { return; }",
+          "  const response = body.response || {};",
+          "  if (response.access_token) pm.collectionVariables.set('access_token', response.access_token);",
+          "  if (response.refresh_token) pm.collectionVariables.set('refresh_token', response.refresh_token);",
+          "  if (response.session_id) pm.collectionVariables.set('session_id', response.session_id);",
+          "  const user = response.user_profile || {};",
+          "  if (user.id) pm.collectionVariables.set('user_id', String(user.id));",
+          "  if (user.email) pm.collectionVariables.set('user_email', user.email);",
+          "  const cookies = pm.cookies.toObject();",
+          "  if (cookies.auth_cookie) pm.collectionVariables.set('auth_cookie', cookies.auth_cookie);",
+          "}",
+          "saveAuthFromResponse();"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api/v1/auth",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "session_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_email",
+      "value": "ada@example.com",
+      "type": "string"
+    },
+    {
+      "key": "auth_cookie",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "role_id",
+      "value": "00000000-0000-0000-0000-000000000001",
+      "type": "string"
+    },
+    {
+      "key": "permission_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "target_user_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Public Auth",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let body = {};",
+                  "try { body = pm.response.json(); } catch (error) {}",
+                  "const response = body.response || {};",
+                  "if (response.access_token) pm.collectionVariables.set('access_token', response.access_token);",
+                  "if (response.refresh_token) pm.collectionVariables.set('refresh_token', response.refresh_token);",
+                  "if (response.session_id) pm.collectionVariables.set('session_id', response.session_id);",
+                  "const user = response.user_profile || {};",
+                  "if (user.id) {",
+                  "  pm.collectionVariables.set('user_id', String(user.id));",
+                  "  pm.collectionVariables.set('target_user_id', String(user.id));",
+                  "}",
+                  "if (user.email) pm.collectionVariables.set('user_email', user.email);",
+                  "const cookies = pm.cookies.toObject();",
+                  "if (cookies.auth_cookie) pm.collectionVariables.set('auth_cookie', cookies.auth_cookie);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Ada\",\n  \"last_name\": \"Lovelace\",\n  \"email\": \"ada@example.com\",\n  \"password\": \"password123\",\n  \"country\": \"United Kingdom\",\n  \"country_code\": \"GB\",\n  \"phone_number\": \"1234567890\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "register"
+              ]
+            },
+            "description": "Creates a standard user and captures auth variables from the response."
+          },
+          "response": []
+        },
+        {
+          "name": "Register Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let body = {};",
+                  "try { body = pm.response.json(); } catch (error) {}",
+                  "const response = body.response || {};",
+                  "if (response.access_token) pm.collectionVariables.set('access_token', response.access_token);",
+                  "if (response.refresh_token) pm.collectionVariables.set('refresh_token', response.refresh_token);",
+                  "if (response.session_id) pm.collectionVariables.set('session_id', response.session_id);",
+                  "const user = response.user_profile || {};",
+                  "if (user.id) {",
+                  "  pm.collectionVariables.set('user_id', String(user.id));",
+                  "  pm.collectionVariables.set('target_user_id', String(user.id));",
+                  "}",
+                  "if (user.email) pm.collectionVariables.set('user_email', user.email);",
+                  "const cookies = pm.cookies.toObject();",
+                  "if (cookies.auth_cookie) pm.collectionVariables.set('auth_cookie', cookies.auth_cookie);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Grace\",\n  \"last_name\": \"Hopper\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\",\n  \"country\": \"United States\",\n  \"country_code\": \"US\",\n  \"phone_number\": \"1234567891\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/register/admin",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "register",
+                "admin"
+              ]
+            },
+            "description": "Creates an admin user and captures auth variables from the response."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let body = {};",
+                  "try { body = pm.response.json(); } catch (error) {}",
+                  "const response = body.response || {};",
+                  "if (response.access_token) pm.collectionVariables.set('access_token', response.access_token);",
+                  "if (response.refresh_token) pm.collectionVariables.set('refresh_token', response.refresh_token);",
+                  "if (response.session_id) pm.collectionVariables.set('session_id', response.session_id);",
+                  "const user = response.user_profile || {};",
+                  "if (user.id) pm.collectionVariables.set('user_id', String(user.id));",
+                  "if (user.email) pm.collectionVariables.set('user_email', user.email);",
+                  "const cookies = pm.cookies.toObject();",
+                  "if (cookies.auth_cookie) pm.collectionVariables.set('auth_cookie', cookies.auth_cookie);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "description": "Authenticates a user and captures access token, refresh token, session ID, user ID, and auth cookie."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sessions",
+      "item": [
+        {
+          "name": "List Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "user_id",
+                "value": "{{user_id}}"
+              },
+              {
+                "key": "session_token",
+                "value": "{{refresh_token}}"
+              },
+              {
+                "key": "session_id",
+                "value": "{{session_id}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "auth_cookie={{auth_cookie}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sessions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sessions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List User Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "user_id",
+                "value": "{{user_id}}"
+              },
+              {
+                "key": "session_token",
+                "value": "{{refresh_token}}"
+              },
+              {
+                "key": "session_id",
+                "value": "{{session_id}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "auth_cookie={{auth_cookie}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sessions/user/{{target_user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sessions",
+                "user",
+                "{{target_user_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Session",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "user_id",
+                "value": "{{user_id}}"
+              },
+              {
+                "key": "session_token",
+                "value": "{{refresh_token}}"
+              },
+              {
+                "key": "session_id",
+                "value": "{{session_id}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "auth_cookie={{auth_cookie}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/sessions/{{session_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sessions",
+                "{{session_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Session Expiry",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "user_id",
+                "value": "{{user_id}}"
+              },
+              {
+                "key": "session_token",
+                "value": "{{refresh_token}}"
+              },
+              {
+                "key": "session_id",
+                "value": "{{session_id}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "auth_cookie={{auth_cookie}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expires_at_in_milliseconds\": 4102444800000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/sessions/{{session_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sessions",
+                "{{session_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "item": [
+        {
+          "name": "List Roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "user_id",
+                "value": "{{user_id}}"
+              },
+              {
+                "key": "session_token",
+                "value": "{{refresh_token}}"
+              },
+              {
+                "key": "session_id",
+                "value": "{{session_id}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "auth_cookie={{auth_cookie}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/roles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "roles"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Role",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let body = {};",
+                  "try { body = pm.response.json(); } catch (error) {}",
+                  "const response = body.response || {};",
+                  "if (response.access_token) pm.collectionVariables.set('access_token', response.access_token);",
+                  "if (response.refresh_token) pm.collectionVariables.set('refresh_token', response.refresh_token);",
+                  "if (response.session_id) pm.collectionVariables.set('session_id', response.session_id);",
+                  "const data = response.data || {};",
+                  "if (data.id) pm.collectionVariables.set('role_id', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "user_id",
+                "value": "{{user_id}}"
+              },
+              {
+                "key": "session_token",
+                "value": "{{refresh_token}}"
+              },
+              {
+                "key": "session_id",
+                "value": "{{session_id}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "auth_cookie={{auth_cookie}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"moderator\",\n  \"description\": \"Can review and moderate user content\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/roles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "roles"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "user_id",
+                "value": "{{user_id}}"
+              },
+              {
+                "key": "session_token",
+                "value": "{{refresh_token}}"
+              },
+              {
+                "key": "session_id",
+                "value": "{{session_id}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "auth_cookie={{auth_cookie}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"moderator\",\n  \"description\": \"Can moderate user-generated content\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/roles/{{role_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "roles",
+                "{{role_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Permission To Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "user_id",
+                "value": "{{user_id}}"
+              },
+              {
+                "key": "session_token",
+                "value": "{{refresh_token}}"
+              },
+              {
+                "key": "session_id",
+                "value": "{{session_id}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "auth_cookie={{auth_cookie}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role_id\": \"{{role_id}}\",\n  \"permission_id\": \"{{permission_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/roles/permissions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "roles",
+                "permissions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Permission From Role",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "user_id",
+                "value": "{{user_id}}"
+              },
+              {
+                "key": "session_token",
+                "value": "{{refresh_token}}"
+              },
+              {
+                "key": "session_id",
+                "value": "{{session_id}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "auth_cookie={{auth_cookie}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role_id\": \"{{role_id}}\",\n  \"permission_id\": \"{{permission_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/roles/permissions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "roles",
+                "permissions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Role To User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "user_id",
+                "value": "{{user_id}}"
+              },
+              {
+                "key": "session_token",
+                "value": "{{refresh_token}}"
+              },
+              {
+                "key": "session_id",
+                "value": "{{session_id}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "auth_cookie={{auth_cookie}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{target_user_id}},\n  \"role_id\": \"{{role_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/roles/user/assign",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "roles",
+                "user",
+                "assign"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Role From User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "user_id",
+                "value": "{{user_id}}"
+              },
+              {
+                "key": "session_token",
+                "value": "{{refresh_token}}"
+              },
+              {
+                "key": "session_id",
+                "value": "{{session_id}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "auth_cookie={{auth_cookie}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": {{target_user_id}},\n  \"role_id\": \"{{role_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/roles/user/remove",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "roles",
+                "user",
+                "remove"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List User Roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "user_id",
+                "value": "{{user_id}}"
+              },
+              {
+                "key": "session_token",
+                "value": "{{refresh_token}}"
+              },
+              {
+                "key": "session_id",
+                "value": "{{session_id}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "auth_cookie={{auth_cookie}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/roles/user/{{target_user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "roles",
+                "user",
+                "{{target_user_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Permissions",
+      "item": [
+        {
+          "name": "List Permissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "user_id",
+                "value": "{{user_id}}"
+              },
+              {
+                "key": "session_token",
+                "value": "{{refresh_token}}"
+              },
+              {
+                "key": "session_id",
+                "value": "{{session_id}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "auth_cookie={{auth_cookie}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/permissions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "permissions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Permission",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let body = {};",
+                  "try { body = pm.response.json(); } catch (error) {}",
+                  "const response = body.response || {};",
+                  "if (response.access_token) pm.collectionVariables.set('access_token', response.access_token);",
+                  "if (response.refresh_token) pm.collectionVariables.set('refresh_token', response.refresh_token);",
+                  "if (response.session_id) pm.collectionVariables.set('session_id', response.session_id);",
+                  "const data = response.data || {};",
+                  "if (data.id) pm.collectionVariables.set('permission_id', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "user_id",
+                "value": "{{user_id}}"
+              },
+              {
+                "key": "session_token",
+                "value": "{{refresh_token}}"
+              },
+              {
+                "key": "session_id",
+                "value": "{{session_id}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "auth_cookie={{auth_cookie}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"content:moderate\",\n  \"description\": \"Moderate content\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/permissions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "permissions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Permission",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "user_id",
+                "value": "{{user_id}}"
+              },
+              {
+                "key": "session_token",
+                "value": "{{refresh_token}}"
+              },
+              {
+                "key": "session_id",
+                "value": "{{session_id}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "auth_cookie={{auth_cookie}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"content:moderate\",\n  \"description\": \"Moderate user-generated content\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/permissions/{{permission_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "permissions",
+                "{{permission_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List User Permissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "user_id",
+                "value": "{{user_id}}"
+              },
+              {
+                "key": "session_token",
+                "value": "{{refresh_token}}"
+              },
+              {
+                "key": "session_id",
+                "value": "{{session_id}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "auth_cookie={{auth_cookie}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/permissions/user/{{target_user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "permissions",
+                "user",
+                "{{target_user_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Logout",
+      "item": [
+        {
+          "name": "Logout Current Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "user_id",
+                "value": "{{user_id}}"
+              },
+              {
+                "key": "session_token",
+                "value": "{{refresh_token}}"
+              },
+              {
+                "key": "session_id",
+                "value": "{{session_id}}"
+              },
+              {
+                "key": "Cookie",
+                "value": "auth_cookie={{auth_cookie}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_email\": \"{{user_email}}\",\n  \"session_id\": \"{{session_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "logout"
+              ]
+            },
+            "description": "Revokes the current session. Run this last when manually testing a flow."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

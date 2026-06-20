@@ -1,0 +1,60 @@
+services:
+  db:
+    image: postgres:15-bookworm
+    container_name: rusty-auth-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rusty_auth}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rusty_auth}
+      POSTGRES_DB: ${POSTGRES_DB:-rusty_auth}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - rusty-auth-postgres-data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        RUST_VERSION: "1.92"
+        APP_NAME: auth
+    image: rusty-auth:local
+    container_name: rusty-auth-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP__DEPLOY__ENV: production
+      APP__ENV: production
+      APP__SERVER__HOST: 0.0.0.0
+      APP__SERVER__PORT: 8000
+      APP__DATABASE__ENGINE: postgres
+      APP__DATABASE__HOST: db
+      APP__DATABASE__PORT: 5432
+      APP__DATABASE__USER: ${POSTGRES_USER:-rusty_auth}
+      APP__DATABASE__PASSWORD: ${POSTGRES_PASSWORD:-rusty_auth}
+      APP__DATABASE__NAME: ${POSTGRES_DB:-rusty_auth}
+      APP__DATABASE__MAX_CONNECTIONS: 20
+      APP__DATABASE__CONNECT_TIMEOUT_SECS: 5
+      APP__AUTH__JWT_SECRET: ${APP__AUTH__JWT_SECRET:-change-me-before-production}
+      APP__AUTH__JWT_ACCESS_EXPIRATION_TIME_IN_HOURS: 1
+      APP__AUTH__JWT_REFRESH_EXPIRATION_TIME_IN_HOURS: 24
+      APP__AUTH__JWT_ONE_TIME_PASSWORD_LIFETIME_IN_MINUTES: 5
+      APP__CLIENT_INTEGRATIONS__ALLOW_RATE_LIMIT_MIDDLEWARE: true
+      APP__RATE_LIMIT__ENABLED: true
+      APP__RATE_LIMIT__REQUESTS_PER_WINDOW: 60
+      APP__RATE_LIMIT__WINDOW_SECS: 60
+    ports:
+      - "${APP_PORT:-8000}:8000"
+
+volumes:
+  rusty-auth-postgres-data:
