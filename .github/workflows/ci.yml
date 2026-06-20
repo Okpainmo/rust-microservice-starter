@@ -1,0 +1,179 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  repository:
+    name: Repository Hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install root tooling
+        run: bun install
+
+      - name: Validate shell hooks
+        run: |
+          sh -n .husky/pre-commit .husky/pre-push .husky/commit-msg scripts/check-rust-services.sh \
+          scripts/test-rust-services.sh
+
+      - name: Check repository formatting
+        run: bun run format:check
+
+  rust-service-quality:
+    name: ${{ matrix.service.name }} Quality
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - name: auth
+            path: microservices/auth
+          - name: mesh
+            path: microservices/mesh
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Rust artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ matrix.service.path }}
+
+      - name: Cargo check
+        working-directory: ${{ matrix.service.path }}
+        run: cargo check --locked --all-targets --all-features
+
+      - name: Rustfmt
+        working-directory: ${{ matrix.service.path }}
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        working-directory: ${{ matrix.service.path }}
+        run: cargo clippy --locked --all-targets --all-features -- -D warnings
+
+  mesh-tests:
+    name: Mesh Tests
+    runs-on: ubuntu-latest
+    env:
+      APP__ENV: development
+      APP__SERVER__HOST: 127.0.0.1
+      APP__SERVER__PORT: 3080
+      APP__SECURITY__REQUIRE_MESH_TOKEN: true
+      APP__SECURITY__MESH_TOKEN: ci-mesh-token
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: microservices/mesh
+
+      - name: Run mesh tests
+        working-directory: microservices/mesh
+        run: cargo test --locked --all-features
+
+  auth-tests:
+    name: Auth Tests
+    runs-on: ubuntu-latest
+    env:
+      APP__ENV: development
+      APP__SERVER__HOST: 127.0.0.1
+      APP__SERVER__PORT: 8000
+      APP__DATABASE__ENGINE: postgres
+      APP__DATABASE__HOST: localhost
+      APP__DATABASE__PORT: 5433
+      APP__DATABASE__USER: rusty_auth
+      APP__DATABASE__PASSWORD: rusty_auth
+      APP__DATABASE__NAME: rusty_auth_test
+      APP__DATABASE__MAX_CONNECTIONS: 5
+      APP__DATABASE__CONNECT_TIMEOUT_SECS: 10
+      APP__AUTH__JWT_SECRET: ci-test-secret
+      APP__AUTH__JWT_ACCESS_EXPIRATION_TIME_IN_HOURS: 1
+      APP__AUTH__JWT_REFRESH_EXPIRATION_TIME_IN_HOURS: 24
+      APP__AUTH__JWT_ONE_TIME_PASSWORD_LIFETIME_IN_MINUTES: 5
+      DATABASE_URL: postgres://rusty_auth:rusty_auth@localhost:5433/rusty_auth_test
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: rusty_auth
+          POSTGRES_PASSWORD: rusty_auth
+          POSTGRES_DB: rusty_auth_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd="pg_isready -U rusty_auth -d rusty_auth_test" --health-interval=10s
+          --health-timeout=5s --health-retries=10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: microservices/auth
+
+      - name: Install sqlx-cli
+        run: |
+          cargo install sqlx-cli --locked --version 0.8.6 --no-default-features --features postgres
+
+      - name: Run auth migrations
+        working-directory: microservices/auth
+        run: sqlx migrate run
+
+      - name: Run auth tests
+        working-directory: microservices/auth
+        run: cargo test --locked --all-features
+
+  docker-builds:
+    name: ${{ matrix.service.name }} Docker Build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - name: auth
+            path: microservices/auth
+          - name: mesh
+            path: microservices/mesh
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build image
+        run: |
+          docker build --pull \
+            --file "${{ matrix.service.path }}/Dockerfile" \
+            --tag "starter-${{ matrix.service.name }}:ci" \
+            "${{ matrix.service.path }}"
