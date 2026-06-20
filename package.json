@@ -1,0 +1,20 @@
+{
+  "name": "rust-microservice-starter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Production-oriented base repository for Rust microservice systems.",
+  "type": "module",
+  "scripts": {
+    "prepare": "husky",
+    "format": "prettier --write \"**/*.{md,yml,yaml,json}\"",
+    "format:check": "prettier --check \"**/*.{md,yml,yaml,json}\"",
+    "services:check": "scripts/check-rust-services.sh",
+    "services:test": "scripts/test-rust-services.sh"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.4.2",
+    "@commitlint/config-conventional": "^20.4.2",
+    "husky": "^9.1.7",
+    "prettier": "^3.8.3"
+  }
+}

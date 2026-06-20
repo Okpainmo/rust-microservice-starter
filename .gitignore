@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.sample
+!.env.*.sample
+
+node_modules/
+target/
+coverage/
+lcov.info
+
+.DS_Store
+*.log
+
+microservices/**/target/
+microservices/**/node_modules/
+microservices/**/coverage/
+microservices/**/lcov.info
