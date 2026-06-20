@@ -1,18 +1,17 @@
 # Rust Microservice Starter
 
 This project is a platform-engineered microservices starter template for building distributed
-systems with Rust. It is built for engineering teams that care about platform integrity and wish
-to(as much as possible) avoid integrating external/third-party tooling for their distributed system
+systems with Rust. It is built for engineering teams that care about platform integrity and wish(as
+much as possible) to avoid integrating external/third-party tooling for their distributed system
 builds.
 
 The base is intentionally minimal, with two services:
 
-- `mesh` - a registry and control plane for service registration, heartbeat refresh, discovery, and
-  endpoint metadata, adapted from [Rusty Mesh](https://github.com/okpainmo/rusty-mesh).
+- `mesh` - a registry and control plane for service registration, heartbeat refresh, load-balanced
+  service discovery, and more. It is adapted from
+  [Rusty Mesh](https://github.com/okpainmo/rusty-mesh).
 - `auth` - a PostgreSQL-backed auth/session/RBAC service, adapted from
   [Rusty Auth](https://github.com/okpainmo/rusty-auth).
-
-Proceed with work from here as needed.
 
 ## Table Of Contents
 
@@ -82,6 +81,8 @@ Start the full stack:
 ```bash
 docker compose up -d --build
 ```
+
+\_n5t5AttrqBCUM\*
 
 For faster Compose builds on newer Docker setups, you can enable Bake:
 
