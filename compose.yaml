@@ -1,0 +1,108 @@
+name: rust-microservice-starter
+
+services:
+  mesh:
+    build:
+      context: ./microservices/mesh
+      dockerfile: Dockerfile
+    image: rust-microservice-starter/mesh:local
+    restart: unless-stopped
+    environment:
+      APP__DEPLOY__ENV: production
+      APP__ENV: production
+      APP__APP__NAME: mesh_service
+      APP__APP__ENVIRONMENT: production
+      APP__SERVER__HOST: 0.0.0.0
+      APP__SERVER__PORT: 3080
+      APP__SERVER__REQUEST_TIMEOUT_SECS: 60
+      APP__REGISTRY__HEARTBEAT_INTERVAL_SECS: ${MESH_HEARTBEAT_INTERVAL_SECS:-5}
+      APP__REGISTRY__SERVICE_TTL_SECS: ${MESH_SERVICE_TTL_SECS:-15}
+      APP__REGISTRY__PUBLIC_HOST: ${MESH_PUBLIC_HOST:-127.0.0.1}
+      APP__REGISTRY__EXTERNAL_ENDPOINT_RESOLUTION: docker
+      APP__SECURITY__REQUIRE_MESH_TOKEN: true
+      APP__SECURITY__MESH_TOKEN: ${MESH_TOKEN:-local-dev-mesh-token}
+    ports:
+      - "${MESH_HTTP_PORT:-3080}:3080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - services
+
+  auth-db:
+    image: postgres:15-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${AUTH_POSTGRES_USER:-rusty_auth}
+      POSTGRES_PASSWORD: ${AUTH_POSTGRES_PASSWORD:-rusty_auth}
+      POSTGRES_DB: ${AUTH_POSTGRES_DB:-rusty_auth}
+    ports:
+      - "${AUTH_POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - auth-postgres-data:/var/lib/postgresql/data
+      - ./microservices/auth/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - services
+
+  auth:
+    build:
+      context: ./microservices/auth
+      dockerfile: Dockerfile
+      args:
+        RUST_VERSION: "1.92"
+        APP_NAME: auth
+    image: rust-microservice-starter/auth:local
+    restart: unless-stopped
+    depends_on:
+      auth-db:
+        condition: service_healthy
+      mesh:
+        condition: service_started
+    environment:
+      APP__DEPLOY__ENV: production
+      APP__ENV: production
+      APP__APP__NAME: auth_service
+      APP__APP__ENVIRONMENT: production
+      APP__SERVER__HOST: 0.0.0.0
+      APP__SERVER__PORT: 8000
+      APP__SERVER__REQUEST_TIMEOUT_SECS: 60
+      APP__DATABASE__ENGINE: postgres
+      APP__DATABASE__HOST: auth-db
+      APP__DATABASE__PORT: 5432
+      APP__DATABASE__USER: ${AUTH_POSTGRES_USER:-rusty_auth}
+      APP__DATABASE__PASSWORD: ${AUTH_POSTGRES_PASSWORD:-rusty_auth}
+      APP__DATABASE__NAME: ${AUTH_POSTGRES_DB:-rusty_auth}
+      APP__DATABASE__MAX_CONNECTIONS: ${AUTH_DB_MAX_CONNECTIONS:-20}
+      APP__DATABASE__CONNECT_TIMEOUT_SECS: ${AUTH_DB_CONNECT_TIMEOUT_SECS:-5}
+      APP__AUTH__JWT_SECRET: ${AUTH_JWT_SECRET:-change-me-before-production}
+      APP__AUTH__JWT_ACCESS_EXPIRATION_TIME_IN_HOURS: ${AUTH_JWT_ACCESS_EXPIRATION_HOURS:-1}
+      APP__AUTH__JWT_REFRESH_EXPIRATION_TIME_IN_HOURS: ${AUTH_JWT_REFRESH_EXPIRATION_HOURS:-24}
+      APP__AUTH__JWT_ONE_TIME_PASSWORD_LIFETIME_IN_MINUTES: ${AUTH_JWT_OTP_LIFETIME_MINUTES:-5}
+      APP__CLIENT_INTEGRATIONS__ALLOW_RATE_LIMIT_MIDDLEWARE: ${AUTH_RATE_LIMIT_MIDDLEWARE:-true}
+      APP__RATE_LIMIT__ENABLED: ${AUTH_RATE_LIMIT_ENABLED:-true}
+      APP__RATE_LIMIT__REQUESTS_PER_WINDOW: ${AUTH_RATE_LIMIT_REQUESTS_PER_WINDOW:-60}
+      APP__RATE_LIMIT__WINDOW_SECS: ${AUTH_RATE_LIMIT_WINDOW_SECS:-60}
+      APP__MESH__ENABLED: true
+      APP__MESH__URL: http://mesh:3080
+      APP__MESH__TOKEN: ${MESH_TOKEN:-local-dev-mesh-token}
+      APP__MESH__SERVICE_NAME: auth-service
+      APP__MESH__SERVICE_VERSION: ${AUTH_SERVICE_VERSION:-1.0.0}
+      APP__MESH__ADVERTISE_HOST: auth
+      APP__MESH__HEARTBEAT_INTERVAL_SECS: ${MESH_HEARTBEAT_INTERVAL_SECS:-5}
+      APP__MESH__EXTERNAL_SCHEME: http
+    ports:
+      - "${AUTH_HTTP_PORT:-8000}:8000"
+    networks:
+      - services
+
+networks:
+  services:
+    driver: bridge
+
+volumes:
+  auth-postgres-data:
