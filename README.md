@@ -39,14 +39,14 @@ Host
 `-- 127.0.0.1:5433 -> auth-db
 
 Compose network
-|-- mesh     -> service registry/control plane
+|-- mesh     -> service registry/control-plane
 |-- auth     -> auth microservice; registers into mesh
 `-- auth-db  -> PostgreSQL for auth
 ```
 
-Rusty Mesh owns service registration, heartbeat refresh, discovery, and endpoint metadata. Rusty
-Auth starts after PostgreSQL is healthy, registers itself with Mesh, refreshes its lease by
-heartbeat, and unregisters during graceful shutdown.
+The `mesh` owns service registration, heartbeat refresh, discovery, and endpoint metadata. The
+`auth` service on the other hand, starts after PostgreSQL is healthy, registers itself with the
+mesh, refreshes its lease by heartbeat, and unregisters during graceful shutdown.
 
 Mesh endpoint resolution for development is intentionally configured as:
 
@@ -65,8 +65,8 @@ about this by reading the [rusty-mesh documentation](https://github.com/okpainmo
 - Bun, for root repository tooling
 - `sqlx-cli`, only when running auth migrations manually outside Compose
 
-The fastest path is Docker Compose. Rust and SQLx are not required on the host to start the full
-stack with Docker Compose.
+The fastest path to a complete project start-up is Docker Compose. For that, Rust and the `sqlx-cli`
+are not required.
 
 ## Quick Start
 
@@ -81,8 +81,6 @@ Start the full stack:
 ```bash
 docker compose up -d --build
 ```
-
-\_n5t5AttrqBCUM\*
 
 For faster Compose builds on newer Docker setups, you can enable Bake:
 
@@ -114,8 +112,8 @@ curl -H "authorization: Bearer ${MESH_TOKEN:-local-dev-mesh-token}" \
 
 You should see `auth-service` after Auth has started and registered.
 
-If Auth takes a little longer to appear, check its logs while it waits for PostgreSQL and registers
-with Mesh:
+If `auth` takes a little longer to appear, check its logs while it waits for PostgreSQL and
+registers with the `mesh`:
 
 ```bash
 docker compose logs -f auth
